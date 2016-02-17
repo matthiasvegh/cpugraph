@@ -2,12 +2,26 @@
 
 import argparse
 import subprocess
+import time
+
+
+def numberOfChildrenOfPid(pid):
+	return 1
 
 
 def runCommandWhileProfiling(command, frequency, output):
-	p = subprocess.Popen(
-		command)
-	return p.wait()
+	process = subprocess.Popen(command)
+	pid = process.pid
+
+	startTime = time.time()
+	processCounts = [(startTime, numberOfChildrenOfPid(pid))]
+
+	while process.poll() is None:
+		time.sleep(frequency)
+		currentTime = time.time()
+		processCounts.append((currentTime, numberOfChildrenOfPid(pid)))
+
+	return process.wait()
 
 
 def main():
