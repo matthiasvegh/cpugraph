@@ -7,7 +7,9 @@ import time
 
 
 def numberOfChildrenOfPid(pid):
-	return 1
+	parent = psutil.Process(pid)
+
+	return len(parent.children(recursive=True)) + 1
 
 
 def runCommandWhileProfiling(command, frequency, output):
