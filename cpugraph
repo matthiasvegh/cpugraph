@@ -1,7 +1,36 @@
 #!/usr/bin/env python3
 
+import argparse
+import subprocess
+
+
+def runCommandWhileProfiling(command, frequency, output):
+	p = subprocess.Popen(
+		command)
+	return p.wait()
+
+
 def main():
-	pass
+	parser = argparse.ArgumentParser(
+		description="Get statistics for running command.")
+
+	parser.add_argument(
+		"--frequency", dest="frequency", type=int,
+		help="How often to check statistics", default=1)
+
+	parser.add_argument(
+		"--output-file", dest="output", type=str,
+		help="Where to place statistics file", default="cpugraph.out")
+
+	parser.add_argument(
+		"command", type=str, help="Command to profile", nargs="*")
+
+	args = parser.parse_args()
+	frequency = args.frequency
+	output = args.output
+	command = args.command
+
+	return runCommandWhileProfiling(command, frequency, output)
 
 if __name__ == "__main__":
 	main()
