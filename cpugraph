@@ -6,25 +6,63 @@ import subprocess
 import time
 
 
-def numberOfChildrenOfPid(pid):
+class Measurement(object):
+
+	def __init__(self, processCount):
+		self.processCount = processCount
+
+
+class JobStatistics(object):
+
+	def __init__(self):
+		self.times = []
+		self.measurements = []
+
+	def _normalizeToFirstTime(self):
+		assert(len(self.times) > 0)
+		startTime = self.times[0]
+		self.times = [time - startTime for time in self.times[:]]
+
+	def add(self, measurement):
+		self.times.append(time.time())
+		self.measurements.append(measurement)
+
+
+	def gplotOutput(self):
+		assert(len(self.times) == len(self.measurements))
+		self._normalizeToFirstTime()
+
+		outputStr = "# time, processCount\n"
+
+		for i in range(len(self.times)):
+			time = self.times[i]
+			measurement = self.measurements[i]
+
+			outputStr += str(time)
+			outputStr += ", "
+			outputStr += str(measurement.processCount)
+			outputStr += "\n"
+
+		return outputStr
+
+
+def currentStatistics(pid):
 	parent = psutil.Process(pid)
 
-	return len(parent.children(recursive=True)) + 1
+	return Measurement(len(parent.children(recursive=True)) + 1)
 
 
 def runCommandWhileProfiling(command, frequency, output):
 	process = subprocess.Popen(command)
 	pid = process.pid
 
-	startTime = time.time()
-	processCounts = [(startTime, numberOfChildrenOfPid(pid))]
+	statistics = JobStatistics()
 
 	while process.poll() is None:
 		time.sleep(frequency)
-		currentTime = time.time()
-		processCounts.append((currentTime, numberOfChildrenOfPid(pid)))
+		statistics.add(currentStatistics(pid))
 
-	return process.wait()
+	return process.wait(), statistics
 
 
 def main():
@@ -47,7 +85,12 @@ def main():
 	output = args.output
 	command = args.command
 
-	return runCommandWhileProfiling(command, frequency, output)
+	returnCode, statistics = runCommandWhileProfiling(
+		command, frequency, output)
+
+	print(statistics.gplotOutput())
+
+	return returnCode
 
 if __name__ == "__main__":
 	main()
